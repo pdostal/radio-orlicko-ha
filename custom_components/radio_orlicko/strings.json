@@ -3,7 +3,10 @@
     "step": {
       "user": {
         "title": "Radio Orlicko",
-        "description": "Add Radio Orlicko to Home Assistant. The integration will create a media player that shows what's currently playing on the station."
+        "description": "Add Radio Orlicko to Home Assistant. Optionally provide a Last.fm API key to enable album art, song duration, and a progress bar.",
+        "data": {
+          "lastfm_api_key": "Last.fm API key (optional)"
+        }
       }
     },
     "abort": {
@@ -11,7 +14,18 @@
       "already_configured": "Radio Orlicko is already configured."
     },
     "error": {
-      "cannot_connect": "Failed to connect to Radio Orlicko. Please check your network connection."
+      "cannot_connect": "Failed to connect to Radio Orlicko. Please check your network connection.",
+      "invalid_lastfm_key": "Invalid Last.fm API key."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Radio Orlicko options",
+        "data": {
+          "lastfm_api_key": "Last.fm API key (optional)"
+        }
+      }
     }
   }
 }

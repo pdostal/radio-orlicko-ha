@@ -5,13 +5,6 @@ import logging
 from datetime import UTC, datetime
 from typing import Any
 
-from homeassistant.components.logbook import (
-    EVENT_LOGBOOK_ENTRY,
-    LOGBOOK_ENTRY_DOMAIN,
-    LOGBOOK_ENTRY_ENTITY_ID,
-    LOGBOOK_ENTRY_MESSAGE,
-    LOGBOOK_ENTRY_NAME,
-)
 from homeassistant.components.media_player import (
     MediaPlayerEntity,
     MediaPlayerEntityFeature,
@@ -27,6 +20,14 @@ from .const import DEFAULT_STREAM_URL, DOMAIN
 from .coordinator import RadioOrlickoCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+# Logbook constants — defined locally to avoid import-order issues with
+# homeassistant.components.logbook not yet loaded at integration startup.
+EVENT_LOGBOOK_ENTRY = "logbook_entry"
+LOGBOOK_ENTRY_NAME = "name"
+LOGBOOK_ENTRY_MESSAGE = "message"
+LOGBOOK_ENTRY_DOMAIN = "domain"
+LOGBOOK_ENTRY_ENTITY_ID = "entity_id"
 
 
 async def async_setup_entry(
@@ -84,7 +85,6 @@ class RadioOrlickoMediaPlayer(CoordinatorEntity[RadioOrlickoCoordinator], MediaP
             raw = data.get("raw", "")
             if raw and raw != self._last_raw:
                 if self._last_raw is not None:
-                    # Don't fire on the very first load — only on actual changes
                     title = data.get("title", "")
                     artist = data.get("artist", "")
                     message = (
@@ -111,41 +111,69 @@ class RadioOrlickoMediaPlayer(CoordinatorEntity[RadioOrlickoCoordinator], MediaP
 
     @property
     def media_title(self) -> str | None:
-        """Return the current track title."""
+        """Current track title."""
         if self.coordinator.data:
             return self.coordinator.data.get("title") or None
         return None
 
     @property
     def media_artist(self) -> str | None:
-        """Return the current artist."""
+        """Current artist."""
         if self.coordinator.data:
             return self.coordinator.data.get("artist") or None
         return None
 
     @property
+    def media_album_name(self) -> str | None:
+        """Album name from Last.fm."""
+        if self.coordinator.data:
+            return self.coordinator.data.get("album") or None
+        return None
+
+    @property
     def media_duration(self) -> float | None:
-        """Duration is unknown for a live stream."""
+        """Track duration in seconds from Last.fm (enables progress bar)."""
+        if self.coordinator.data:
+            return self.coordinator.data.get("duration")
         return None
 
     @property
     def media_position(self) -> float | None:
-        """Return elapsed seconds since the current song started."""
+        """Elapsed seconds since the current song was first detected."""
         if self.coordinator.data is None:
             return None
         start = self.coordinator.data.get("song_start_time")
         if start is None:
             return None
-        elapsed = (datetime.now(UTC) - start).total_seconds()
-        return max(0.0, elapsed)
+        return max(0.0, (datetime.now(UTC) - start).total_seconds())
+
+    @property
+    def media_image_url(self) -> str | None:
+        """Album art URL from Last.fm or Cover Art Archive."""
+        if self.coordinator.data:
+            return self.coordinator.data.get("image_url") or None
+        return None
+
+    @property
+    def media_image_remotely_accessible(self) -> bool:
+        """Album art is hosted on a public CDN."""
+        return True
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
-        """Return extra attributes including the current show."""
+        """Extra attributes including show info and Last.fm stats."""
         if self.coordinator.data is None:
             return {}
-        return {
-            "current_show": self.coordinator.data.get("current_show", ""),
-            "current_host": self.coordinator.data.get("current_host", ""),
+        d = self.coordinator.data
+        attrs: dict[str, Any] = {
             "stream_url": DEFAULT_STREAM_URL,
         }
+        if d.get("current_show"):
+            attrs["current_show"] = d["current_show"]
+        if d.get("current_host"):
+            attrs["current_host"] = d["current_host"]
+        if d.get("playcount"):
+            attrs["lastfm_playcount"] = d["playcount"]
+        if d.get("listeners"):
+            attrs["lastfm_listeners"] = d["listeners"]
+        return attrs
