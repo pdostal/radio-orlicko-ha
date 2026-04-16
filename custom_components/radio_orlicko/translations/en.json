@@ -1,0 +1,17 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Radio Orlicko",
+        "description": "Add Radio Orlicko to Home Assistant. The integration will create a media player that shows what's currently playing on the station."
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Only one Radio Orlicko integration is allowed.",
+      "already_configured": "Radio Orlicko is already configured."
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to Radio Orlicko. Please check your network connection."
+    }
+  }
+}

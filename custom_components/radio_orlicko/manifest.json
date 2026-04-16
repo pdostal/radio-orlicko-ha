@@ -1,0 +1,11 @@
+{
+  "domain": "radio_orlicko",
+  "name": "Radio Orlicko",
+  "codeowners": ["@pdostal"],
+  "config_flow": true,
+  "documentation": "https://github.com/pdostal/radio-orlicko-ha",
+  "iot_class": "cloud_polling",
+  "issue_tracker": "https://github.com/pdostal/radio-orlicko-ha/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}

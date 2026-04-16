@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:www.radioorlicko.cz)",
+      "Bash(curl -s https://api.github.com/repos/pdostal/gensokyo-ha/contents)",
+      "WebFetch(domain:player.radioorlicko.cz)",
+      "WebFetch(domain:onlineradiobox.com)",
+      "Bash(curl -s \"https://api.github.com/repos/pdostal/gensokyo-ha/contents/custom_components/gensokyo_radio\")",
+      "Bash(curl -s \"https://api.github.com/repos/pdostal/gensokyo-ha/contents/.github/workflows\")",
+      "Bash(curl -s \"https://api.github.com/repos/pdostal/gensokyo-ha/contents\")",
+      "WebFetch(domain:radioorlicko.cz)",
+      "Bash(curl *)",
+      "Bash(gh api *)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
+    ]
+  }
+}
