@@ -262,9 +262,10 @@ class RadioOrlickoCoordinator(TimestampDataUpdateCoordinator[dict[str, Any]]):
 
         song = _parse_song(raw)
 
-        # Track song start time
+        # Track song start time — offset by a full poll interval to compensate
+        # for detection lag (song started up to POLL_INTERVAL seconds before we noticed)
         if song["raw"] != self._last_raw:
-            self.song_start_time = datetime.now(UTC)
+            self.song_start_time = datetime.now(UTC) - timedelta(seconds=POLL_INTERVAL)
             self._last_raw = song["raw"]
 
         # Enrich with Last.fm / MusicBrainz (only fires actual HTTP on song change)
