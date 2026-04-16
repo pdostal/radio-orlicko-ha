@@ -7,7 +7,10 @@ from typing import Any
 
 import aiohttp
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.update_coordinator import (
+    TimestampDataUpdateCoordinator,
+    UpdateFailed,
+)
 
 from .const import (
     API_URL,
@@ -33,8 +36,12 @@ def _parse_song(raw: str) -> dict[str, str]:
     return {"artist": "", "title": raw, "raw": raw}
 
 
-class RadioOrlickoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
-    """Coordinator that polls the Radio Orlicko now-playing API."""
+class RadioOrlickoCoordinator(TimestampDataUpdateCoordinator[dict[str, Any]]):
+    """Coordinator that polls the Radio Orlicko now-playing API every 10 seconds.
+
+    Uses TimestampDataUpdateCoordinator so that last_update_success_time is
+    always a valid datetime — required for media_position_updated_at.
+    """
 
     def __init__(self, hass: HomeAssistant, session: aiohttp.ClientSession) -> None:
         """Initialise the coordinator."""
@@ -83,7 +90,7 @@ class RadioOrlickoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self._program_cache = await self._fetch_json(PROGRAM_URL)
                 self._program_fetched_at = now
             except Exception:  # noqa: BLE001
-                _LOGGER.debug("Could not fetch program schedule")
+                _LOGGER.debug("Could not fetch Radio Orlicko program schedule")
         return self._program_cache
 
     @staticmethod
@@ -116,7 +123,7 @@ class RadioOrlickoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         song = _parse_song(raw)
 
-        # Track when this song started
+        # Track when this song started playing
         if song["raw"] != self._last_raw:
             self.song_start_time = datetime.now(UTC)
             self._last_raw = song["raw"]
@@ -133,5 +140,6 @@ class RadioOrlickoCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "current_host": current_host,
         }
 
-    def async_shutdown(self) -> None:
-        """Clean up resources."""
+    async def async_shutdown(self) -> None:
+        """Clean up on integration unload."""
+        await super().async_shutdown()

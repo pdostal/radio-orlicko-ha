@@ -43,24 +43,32 @@ class RadioOrlickoMediaPlayer(CoordinatorEntity[RadioOrlickoCoordinator], MediaP
     """Representation of the Radio Orlicko live stream."""
 
     _attr_has_entity_name = True
-    _attr_name = None
+    _attr_name = "Radio Orlicko"
+    _attr_icon = "mdi:radio"
     _attr_media_content_type = MediaType.MUSIC
-    _attr_state = MediaPlayerState.PLAYING
     _attr_supported_features = MediaPlayerEntityFeature(0)
     _attr_media_content_id = DEFAULT_STREAM_URL
 
     def __init__(self, coordinator: RadioOrlickoCoordinator) -> None:
         """Initialise the media player."""
         super().__init__(coordinator)
-        self._attr_unique_id = DOMAIN
-        self._attr_device_info = {
-            "identifiers": {(DOMAIN, DOMAIN)},
-            "name": "Radio Orlicko",
-            "manufacturer": "Radio Orlicko",
-            "model": "Online Stream",
-            "configuration_url": "https://www.radioorlicko.cz",
-        }
+        self._attr_unique_id = f"{DOMAIN}_media_player"
         self._last_raw: str | None = None
+
+    async def async_added_to_hass(self) -> None:
+        """Stamp position timestamp on boot so the elapsed counter works immediately."""
+        await super().async_added_to_hass()
+        self._attr_media_position_updated_at = self.coordinator.last_update_success_time
+        self.async_write_ha_state()
+
+    # ------------------------------------------------------------------
+    # State
+    # ------------------------------------------------------------------
+
+    @property
+    def state(self) -> MediaPlayerState:
+        """Always playing — live radio stream."""
+        return MediaPlayerState.PLAYING
 
     # ------------------------------------------------------------------
     # CoordinatorEntity callbacks
@@ -68,28 +76,32 @@ class RadioOrlickoMediaPlayer(CoordinatorEntity[RadioOrlickoCoordinator], MediaP
 
     @callback
     def _handle_coordinator_update(self) -> None:
-        """Handle updated data from coordinator and fire logbook on song change."""
-        data = self.coordinator.data
-        if data is None:
-            return
+        """Stamp position timestamp and fire logbook entry on song change."""
+        self._attr_media_position_updated_at = self.coordinator.last_update_success_time
 
-        raw = data.get("raw", "")
-        if raw and raw != self._last_raw:
-            if self._last_raw is not None:
-                # Fire a logbook entry — first update after initial load doesn't count
-                title = data.get("title", "")
-                artist = data.get("artist", "")
-                message = f"Now playing: {title} by {artist}" if artist else f"Now playing: {title}"
-                self.hass.bus.async_fire(
-                    EVENT_LOGBOOK_ENTRY,
-                    {
-                        LOGBOOK_ENTRY_NAME: "Radio Orlicko",
-                        LOGBOOK_ENTRY_MESSAGE: message,
-                        LOGBOOK_ENTRY_DOMAIN: DOMAIN,
-                        LOGBOOK_ENTRY_ENTITY_ID: self.entity_id,
-                    },
-                )
-            self._last_raw = raw
+        data = self.coordinator.data
+        if data is not None:
+            raw = data.get("raw", "")
+            if raw and raw != self._last_raw:
+                if self._last_raw is not None:
+                    # Don't fire on the very first load — only on actual changes
+                    title = data.get("title", "")
+                    artist = data.get("artist", "")
+                    message = (
+                        f"Now playing: {title} by {artist}"
+                        if artist
+                        else f"Now playing: {title}"
+                    )
+                    self.hass.bus.async_fire(
+                        EVENT_LOGBOOK_ENTRY,
+                        {
+                            LOGBOOK_ENTRY_NAME: "Radio Orlicko",
+                            LOGBOOK_ENTRY_MESSAGE: message,
+                            LOGBOOK_ENTRY_DOMAIN: DOMAIN,
+                            LOGBOOK_ENTRY_ENTITY_ID: self.entity_id,
+                        },
+                    )
+                self._last_raw = raw
 
         super()._handle_coordinator_update()
 
@@ -126,13 +138,6 @@ class RadioOrlickoMediaPlayer(CoordinatorEntity[RadioOrlickoCoordinator], MediaP
             return None
         elapsed = (datetime.now(UTC) - start).total_seconds()
         return max(0.0, elapsed)
-
-    @property
-    def media_position_updated_at(self) -> datetime | None:
-        """Return when the position was last calculated (now, for interpolation)."""
-        if self.coordinator.last_update_success_time is None:
-            return None
-        return self.coordinator.last_update_success_time
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
