@@ -256,7 +256,10 @@ class RadioOrlickoCoordinator(TimestampDataUpdateCoordinator[dict[str, Any]]):
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch current song, enrich via Last.fm/MusicBrainz, return combined data."""
         try:
-            raw = await self._get_text(API_URL)
+            raw = await self._get_text(
+                API_URL,
+                params={"t": int(datetime.now().timestamp() * 1000)},
+            )
         except (aiohttp.ClientError, TimeoutError) as err:
             raise UpdateFailed(f"Error fetching Radio Orlicko data: {err}") from err
 

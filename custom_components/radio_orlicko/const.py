@@ -4,8 +4,8 @@ DOMAIN = "radio_orlicko"
 PLATFORMS = ["media_player"]
 
 # Radio Orlicko endpoints
-API_URL = "https://player.radioorlicko.cz/data/current_song.txt"
-PROGRAM_URL = "https://player.radioorlicko.cz/data/program.json"
+API_URL = "https://www.radioorlicko.cz/data/current_song.txt"
+PROGRAM_URL = "https://www.radioorlicko.cz/data/program.json"
 DEFAULT_STREAM_URL = "https://mediaservice.radioorlicko.cz/stream192.mp3"
 
 # Polling
